@@ -16,7 +16,6 @@ var (
 )
 
 type Repository interface {
-	CreateUser(ctx context.Context, user *User) error
 	GetUserByID(ctx context.Context, userID string) (*User, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	UpdateUser(ctx context.Context, user *User) error
@@ -31,47 +30,6 @@ func NewRepository(database db.SQLExecutor) Repository {
 	return &repository{
 		db: database,
 	}
-}
-
-// CreateUser creates a new user
-func (r *repository) CreateUser(ctx context.Context, user *User) error {
-	tagsJSON, err := json.Marshal(user.Tags)
-	if err != nil {
-		return fmt.Errorf("marshal tags: %w", err)
-	}
-
-	availabilityJSON, err := json.Marshal(user.Availability)
-	if err != nil {
-		return fmt.Errorf("marshal availability: %w", err)
-	}
-
-	statsJSON, err := json.Marshal(user.Stats)
-	if err != nil {
-		return fmt.Errorf("marshal stats: %w", err)
-	}
-
-	query := `
-		INSERT INTO users (id, email, full_name, tags, skill_level, availability, intent, stats)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING created_at, updated_at
-	`
-
-	err = r.db.QueryRowContext(ctx, query,
-		user.ID,
-		user.Email,
-		user.FullName,
-		tagsJSON,
-		user.SkillLevel,
-		availabilityJSON,
-		user.Intent,
-		statsJSON,
-	).Scan(&user.CreatedAt, &user.UpdatedAt)
-
-	if err != nil {
-		return fmt.Errorf("insert user: %w", err)
-	}
-
-	return nil
 }
 
 // GetUserByID retrieves a user by ID

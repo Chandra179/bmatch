@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -45,6 +46,13 @@ type Config struct {
 	Postgres      PostgresConfig
 	OAuth2        Oauth2Config
 	Observability ObservabilityConfig
+	Group         GroupConfig
+}
+
+type GroupConfig struct {
+	DefaultCapacity     int
+	MaxCapacity         int
+	ApplicationTTLHours int
 }
 
 func Load() (*Config, error) {
@@ -98,6 +106,13 @@ func Load() (*Config, error) {
 		return nil, errors.Join(errs...)
 	}
 
+	// ==========
+	// Group configuration
+	// ==========
+	defaultCapacity := getEnvAsIntOrDefault("GROUP_DEFAULT_CAPACITY", 5)
+	maxCapacity := getEnvAsIntOrDefault("GROUP_MAX_CAPACITY", 10)
+	applicationTTL := getEnvAsIntOrDefault("GROUP_APPLICATION_TTL_HOURS", 72)
+
 	return &Config{
 		AppEnv: appEnv,
 		Redis: RedisConfig{
@@ -125,6 +140,11 @@ func Load() (*Config, error) {
 			DBName:   pgDB,
 			SSLMode:  pgSSL,
 		},
+		Group: GroupConfig{
+			DefaultCapacity:     defaultCapacity,
+			MaxCapacity:         maxCapacity,
+			ApplicationTTLHours: applicationTTL,
+		},
 	}, nil
 }
 
@@ -143,5 +163,19 @@ func getEnvOrDefault(key, defaultValue string) string {
 	if !exists || value == "" {
 		return defaultValue
 	}
+	return value
+}
+
+func getEnvAsIntOrDefault(key string, defaultValue int) int {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
+	}
+
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+
 	return value
 }

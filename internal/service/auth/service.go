@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"gosdk/pkg/db"
-	"gosdk/pkg/oauth2"
-	"gosdk/pkg/session"
+	"bmatch/pkg/db"
+	"bmatch/pkg/oauth2"
+	"bmatch/pkg/session"
 
 	"github.com/google/uuid"
 )

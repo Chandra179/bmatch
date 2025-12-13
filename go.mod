@@ -1,4 +1,4 @@
-module gosdk
+module bmatch
 
 go 1.25.0
 

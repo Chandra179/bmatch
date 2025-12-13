@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"gosdk/cfg"
+	"bmatch/cfg"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"

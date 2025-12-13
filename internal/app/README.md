@@ -52,19 +52,19 @@ func NewServer(ctx context.Context, config *cfg.Config) (*Server, error) {
 		return nil, fmt.Errorf("oauth2 init: %w", err)
 	}
 
-	s.initServices()
-	s.setupRoutes()
+	s.initServicesAndRoutes()
 
 	return s, nil
 }
 
-func (s *Server) initServices() {
+func (s *Server) initServicesAndRoutes() {
 	s.authService = auth.NewService(
 		s.oauth2Manager,
 		s.sessionStore,
 		s.db,
 	)
 
+	// Wire up OAuth2 callback
 	s.oauth2Manager.CallbackHandler = func(
 		ctx context.Context,
 		provider string,
@@ -73,8 +73,26 @@ func (s *Server) initServices() {
 	) (*oauth2.CallbackInfo, error) {
 		return s.authService.HandleCallback(ctx, provider, userInfo, tokenSet)
 	}
-    s.serviceA = a.NewService()
-    s.serviceB = b.NewService()
+
+	// Initialize User Service
+	userRepo := user.NewRepository(s.db)
+	s.userService = user.NewService(userRepo, s.logger)
+	// Initialize Group Service
+	groupRepo := group.NewRepository(s.db)
+	groupMatcher := group.NewPostgresMatcher(groupRepo)
+	s.groupService = group.NewService(groupRepo, groupMatcher, s.cache, s.logger)
+
+	r := gin.New()
+	r.Use(gin.Recovery())
+	routes := NewRoutes(r)
+	routes.setupInfraRoutes()
+	// Business logic endpoints
+	authHandler := auth.NewHandler(s.authService)
+	routes.setupAuthRoutes(authHandler, s.oauth2Manager)
+	routes.setupGroupRoutes(authHandler, s.groupService)
+	routes.setupUserRoutes(authHandler, s.userService)
+
+	s.router = r
 }
 ```
 

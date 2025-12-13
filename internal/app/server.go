@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"log"
 
-	"gosdk/cfg"
-	"gosdk/internal/service/auth"
-	"gosdk/pkg/cache"
-	"gosdk/pkg/db"
-	"gosdk/pkg/logger"
-	"gosdk/pkg/oauth2"
-	"gosdk/pkg/session"
+	"bmatch/cfg"
+	"bmatch/internal/service/auth"
+	"bmatch/internal/service/group"
+	"bmatch/internal/service/user"
+	"bmatch/pkg/cache"
+	"bmatch/pkg/db"
+	"bmatch/pkg/logger"
+	"bmatch/pkg/oauth2"
+	"bmatch/pkg/session"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,8 +27,12 @@ type Server struct {
 	cache         cache.Cache
 	sessionStore  session.Store
 	oauth2Manager *oauth2.Manager
-	authService   *auth.Service
 	shutdown      func(context.Context) error
+
+	// internal service
+	userService  *user.Service
+	groupService *group.Service
+	authService  *auth.Service
 }
 
 // NewServer creates and initializes a new server instance
@@ -58,8 +64,7 @@ func NewServer(ctx context.Context, config *cfg.Config) (*Server, error) {
 		return nil, fmt.Errorf("oauth2 init: %w", err)
 	}
 
-	s.initServices()
-	s.setupRoutes()
+	s.initServicesAndRoutes()
 
 	s.logger.Info(ctx, "Server initialized successfully")
 	return s, nil
@@ -100,7 +105,7 @@ func (s *Server) initOAuth2(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) initServices() {
+func (s *Server) initServicesAndRoutes() {
 	s.authService = auth.NewService(
 		s.oauth2Manager,
 		s.sessionStore,
@@ -116,18 +121,24 @@ func (s *Server) initServices() {
 	) (*oauth2.CallbackInfo, error) {
 		return s.authService.HandleCallback(ctx, provider, userInfo, tokenSet)
 	}
-}
 
-func (s *Server) setupRoutes() {
+	// Initialize User Service
+	userRepo := user.NewRepository(s.db)
+	s.userService = user.NewService(userRepo, s.logger)
+	// Initialize Group Service
+	groupRepo := group.NewRepository(s.db)
+	groupMatcher := group.NewPostgresMatcher(groupRepo)
+	s.groupService = group.NewService(groupRepo, groupMatcher, s.cache, s.logger)
+
 	r := gin.New()
 	r.Use(gin.Recovery())
-
-	// Infrastructure endpoints
-	setupInfraRoutes(r)
-
+	routes := NewRoutes(r)
+	routes.setupInfraRoutes()
 	// Business logic endpoints
 	authHandler := auth.NewHandler(s.authService)
-	setupAuthRoutes(r, authHandler, s.oauth2Manager)
+	routes.setupAuthRoutes(authHandler, s.oauth2Manager)
+	routes.setupGroupRoutes(authHandler, s.groupService)
+	routes.setupUserRoutes(authHandler, s.userService)
 
 	s.router = r
 }

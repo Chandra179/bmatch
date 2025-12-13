@@ -1,8 +1,8 @@
 package auth
 
 import (
+	"bmatch/pkg/oauth2"
 	"errors"
-	"gosdk/pkg/oauth2"
 	"time"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"gosdk/cfg"
-	"gosdk/internal/app"
+	"bmatch/cfg"
+	"bmatch/internal/app"
 )
 
 func main() {

@@ -1,0 +1,2 @@
+echo "# Netscape HTTP Cookie File" > cookies.txt
+echo "localhost	FALSE	/	TRUE	0	session_id	2c46b0fba92c94dac5e86faf999f7170905cd04cb0b4601ccc2da6779c251b17" >> cookies.txt

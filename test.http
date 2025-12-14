@@ -1,7 +1,252 @@
+### Variables
+@baseUrl = http://localhost:8080
+@cookieFile = cookies.txt
+# After login, paste your session_id cookie value here:
+@sessionCookie = 01d10d6f-97bc-4a3d-8edc-ef6fbd1e96ed
+
 ### ============================================
-### User login
+### INFRASTRUCTURE ENDPOINTS (Public)
 ### ============================================
-curl -i -s \
-  -X POST http://localhost:8080/auth/login \
+
+### Get Prometheus Metrics
+GET {{baseUrl}}/metrics
+
+### Get Swagger Documentation
+GET {{baseUrl}}/swagger/index.html
+
+### Get API Docs
+GET {{baseUrl}}/docs
+
+
+### ============================================
+### AUTHENTICATION ENDPOINTS
+### ============================================
+
+### Login with OAuth2 (Google)
+# Note: This will redirect to Google OAuth2 page
+# You MUST complete this in a browser, then copy the session_id cookie
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "provider": "google"
+}
+
+### OAuth2 Google Callback
+# This endpoint is called by Google after authorization
+# It should set the session cookie
+GET {{baseUrl}}/auth/callback/google?code=AUTHORIZATION_CODE&state=STATE_VALUE
+
+### Logout
+# Requires session cookie
+POST {{baseUrl}}/auth/logout
+Cookie: session_id={{sessionCookie}}
+
+
+### ============================================
+### USER ENDPOINTS
+### ============================================
+
+### Get User by ID (Public)
+# Replace with actual UUID from your database
+GET {{baseUrl}}/users/550e8400-e29b-41d4-a716-446655440000
+
+### Get Current User Profile (Authenticated)
+# Requires session cookie from login
+GET {{baseUrl}}/profile
+Cookie: session_id={{sessionCookie}}
+
+### Update Current User Profile (Authenticated)
+# Requires session cookie from login
+PUT {{baseUrl}}/profile
+Content-Type: application/json
+Cookie: session_id={{sessionCookie}}
+
+{
+  "full_name": "John Doe",
+  "tags": ["coding", "golang", "backend", "microservices"],
+  "skill_level": "INTERMEDIATE",
+  "availability": ["WEEKENDS", "EVENINGS"],
+  "intent": "SERIOUS"
+}
+
+
+### ============================================
+### GROUP ENDPOINTS
+### ============================================
+
+### Discover Groups (Public/Authenticated)
+# Can be used without authentication, but better results when authenticated
+GET {{baseUrl}}/groups/discover?tags=coding,golang&limit=10&offset=0
+
+### Discover Groups (Authenticated - better matching)
+GET {{baseUrl}}/groups/discover?tags=coding,golang&limit=10&offset=0
+Cookie: session_id={{sessionCookie}}
+
+### Get Group by ID (Public)
+# Replace with actual group UUID from your database
+GET {{baseUrl}}/groups/550e8400-e29b-41d4-a716-446655440001
+
+### Create Group (Authenticated)
+# Requires session cookie from login
+POST {{baseUrl}}/groups
+Content-Type: application/json
+Cookie: session_id={{sessionCookie}}
+
+{
+  "title": "Go Backend Developers",
+  "description": "A community for Golang backend developers to share knowledge and collaborate on projects",
+  "proposal": "We aim to build production-ready microservices using Go best practices and share our learnings through code reviews and pair programming sessions",
+  "tags": ["golang", "backend", "microservices"],
+  "capacity": 8,
+  "join_type": "OPEN"
+}
+
+### Create Group with Application (Authenticated)
+# Requires session cookie from login
+POST {{baseUrl}}/groups
+Content-Type: application/json
+Cookie: session_id={{sessionCookie}}
+
+{
+  "title": "Advanced System Design Study Group",
+  "description": "Deep dive into distributed systems and architecture patterns",
+  "proposal": "Master complex system design concepts through weekly case studies and design reviews of real-world systems",
+  "tags": ["system-design", "architecture", "distributed-systems"],
+  "capacity": 5,
+  "join_type": "APPLICATION"
+}
+
+### Join Group (Authenticated - for OPEN groups only)
+# Requires session cookie from login
+# Replace with actual group UUID
+POST {{baseUrl}}/groups/550e8400-e29b-41d4-a716-446655440001/join
+Cookie: session_id={{sessionCookie}}
+
+### Apply to Group (Authenticated - for APPLICATION groups only)
+# Requires session cookie from login
+# Replace with actual group UUID
+POST {{baseUrl}}/groups/550e8400-e29b-41d4-a716-446655440002/apply
+Content-Type: application/json
+Cookie: session_id={{sessionCookie}}
+
+{
+  "pitch": "I'm an experienced Go developer with 5 years of backend experience building microservices at scale. I've worked extensively with distributed systems and would love to contribute my knowledge while learning from the group."
+}
+
+### Approve Application (Authenticated - Group Owner only)
+# Requires session cookie from login
+# Replace with actual group UUID and applicant user UUID
+POST {{baseUrl}}/groups/550e8400-e29b-41d4-a716-446655440002/applications/550e8400-e29b-41d4-a716-446655440003/approve
+Content-Type: application/json
+Cookie: session_id={{sessionCookie}}
+
+{
+  "approve": true
+}
+
+### Reject Application (Authenticated - Group Owner only)
+# Requires session cookie from login
+POST {{baseUrl}}/groups/550e8400-e29b-41d4-a716-446655440002/applications/550e8400-e29b-41d4-a716-446655440003/approve
+Content-Type: application/json
+Cookie: session_id={{sessionCookie}}
+
+{
+  "approve": false
+}
+
+### Get My Groups (Authenticated)
+# Returns all groups the current user is a member of
+GET {{baseUrl}}/my-groups
+Cookie: session_id={{sessionCookie}}
+
+
+### ============================================
+### CURL COMMANDS FOR TERMINAL USE
+### ============================================
+
+###############################################
+# STEP 1: GET SESSION COOKIE FROM BROWSER
+###############################################
+# 1. Open browser and navigate to: http://localhost:8080/auth/login
+#    (You may need to use Postman or manually POST {"provider":"google"})
+# 2. Complete Google OAuth2 login
+# 3. Open DevTools (F12) → Application → Cookies → http://localhost:8080
+# 4. Copy the value of the "session_id" cookie
+# 5. Create cookies.txt file in Netscape format:
+
+# echo "# Netscape HTTP Cookie File" > cookies.txt
+# echo "localhost	FALSE	/	TRUE	0	session_id	YOUR_SESSION_VALUE_HERE" >> cookies.txt
+
+# Or create cookies.txt manually with this format:
+# localhost	FALSE	/	TRUE	0	session_id	YOUR_SESSION_VALUE_HERE
+
+###############################################
+# STEP 2: USE CURL WITH THE COOKIE
+###############################################
+
+# Logout
+curl -X POST http://localhost:8080/auth/logout \
+  -b cookies.txt \
+  -c cookies.txt
+
+# Get Current User Profile
+curl -X GET http://localhost:8080/profile \
+  -b cookies.txt
+
+# Update Profile
+curl -X PUT http://localhost:8080/profile \
   -H "Content-Type: application/json" \
-  -d '{"provider": "google"}'
+  -b cookies.txt \
+  -d '{"full_name":"John Doe","tags":["coding","golang"],"skill_level":"INTERMEDIATE","availability":["WEEKENDS","EVENINGS"],"intent":"SERIOUS"}'
+
+# Get User by ID (replace with actual UUID)
+curl -X GET http://localhost:8080/users/550e8400-e29b-41d4-a716-446655440000
+
+# Discover Groups (public)
+curl -X GET "http://localhost:8080/groups/discover?tags=coding,golang&limit=10"
+
+# Discover Groups (authenticated - better matching)
+curl -X GET "http://localhost:8080/groups/discover?tags=coding,golang&limit=10" \
+  -b cookies.txt
+
+# Get Group by ID (replace with actual UUID)
+curl -X GET http://localhost:8080/groups/550e8400-e29b-41d4-a716-446655440001
+
+# Create Group (OPEN type)
+curl -X POST http://localhost:8080/groups \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"title":"Go Developers","description":"Golang community","proposal":"Learn and build together","tags":["golang"],"capacity":8,"join_type":"OPEN"}'
+
+# Create Group (APPLICATION type)
+curl -X POST http://localhost:8080/groups \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"title":"Advanced System Design","description":"Deep dive into distributed systems","proposal":"Master system design","tags":["system-design"],"capacity":5,"join_type":"APPLICATION"}'
+
+# Join Group (replace with actual UUID)
+curl -X POST http://localhost:8080/groups/550e8400-e29b-41d4-a716-446655440001/join \
+  -b cookies.txt
+
+# Apply to Group (replace with actual UUID)
+curl -X POST http://localhost:8080/groups/550e8400-e29b-41d4-a716-446655440002/apply \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"pitch":"I am an experienced developer with 5 years in Go..."}'
+
+# Approve Application (replace with actual UUIDs)
+curl -X POST http://localhost:8080/groups/550e8400-e29b-41d4-a716-446655440002/applications/550e8400-e29b-41d4-a716-446655440003/approve \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"approve":true}'
+
+# Reject Application (replace with actual UUIDs)
+curl -X POST http://localhost:8080/groups/550e8400-e29b-41d4-a716-446655440002/applications/550e8400-e29b-41d4-a716-446655440003/approve \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"approve":false}'
+
+# Get My Groups
+curl -X GET http://localhost:8080/my-groups \
+  -b cookies.txt

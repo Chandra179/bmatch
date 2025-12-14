@@ -8,12 +8,12 @@ import (
 	"bmatch/cfg"
 	"bmatch/internal/service/auth"
 	"bmatch/internal/service/group"
+	"bmatch/internal/service/session"
 	"bmatch/internal/service/user"
 	"bmatch/pkg/cache"
 	"bmatch/pkg/db"
 	"bmatch/pkg/logger"
 	"bmatch/pkg/oauth2"
-	"bmatch/pkg/session"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,7 +25,7 @@ type Server struct {
 	logger        *logger.AppLogger
 	db            *db.SQLClient
 	cache         cache.Cache
-	sessionStore  session.Store
+	sessionClient session.Client
 	oauth2Manager *oauth2.Manager
 	shutdown      func(context.Context) error
 
@@ -58,7 +58,7 @@ func NewServer(ctx context.Context, config *cfg.Config) (*Server, error) {
 		return nil, fmt.Errorf("cache init: %w", err)
 	}
 
-	s.sessionStore = session.NewInMemoryStore()
+	s.sessionClient = session.NewRedisStore(s.cache)
 
 	if err := s.initOAuth2(ctx); err != nil {
 		return nil, fmt.Errorf("oauth2 init: %w", err)
@@ -108,7 +108,7 @@ func (s *Server) initOAuth2(ctx context.Context) error {
 func (s *Server) initServicesAndRoutes() {
 	s.authService = auth.NewService(
 		s.oauth2Manager,
-		s.sessionStore,
+		s.sessionClient,
 		s.db,
 	)
 

@@ -7,6 +7,9 @@ import (
 	"fmt"
 
 	"bmatch/pkg/db"
+	"bmatch/pkg/logger"
+
+	"github.com/lib/pq"
 )
 
 type Repository interface {
@@ -29,12 +32,14 @@ type Repository interface {
 }
 
 type repository struct {
-	db db.SQLExecutor
+	db     db.SQLExecutor
+	logger logger.AppLogger
 }
 
-func NewRepository(database db.SQLExecutor) Repository {
+func NewRepository(database db.SQLExecutor, logger logger.AppLogger) Repository {
 	return &repository{
-		db: database,
+		db:     database,
+		logger: logger,
 	}
 }
 
@@ -220,21 +225,22 @@ func (r *repository) UpdateGroup(ctx context.Context, tx *sql.Tx, group *Group) 
 
 // FindGroupsByTags finds groups using GIN index on tags
 func (r *repository) FindGroupsByTags(ctx context.Context, tags []string, filters DiscoverGroupsRequest) ([]*Group, error) {
+	fmt.Printf("DEBUG: Received tags: %+v (length: %d)\n", tags, len(tags))
 	query := `
-		SELECT id, owner_id, title, description, proposal, tags, capacity, current_count, 
-		       join_type, status, applications, created_at, updated_at
-		FROM groups
-		WHERE status = 'OPEN'
-		  AND current_count < capacity
-	`
+        SELECT id, owner_id, title, description, proposal, tags, capacity, current_count, 
+               join_type, status, applications, created_at, updated_at
+        FROM groups
+        WHERE status = 'OPEN'
+          AND current_count < capacity
+    `
 
 	args := []interface{}{}
 	argIdx := 1
 
 	if len(tags) > 0 {
-		tagsJSON, _ := json.Marshal(tags)
-		query += fmt.Sprintf(" AND tags ?| $%d::text[]", argIdx)
-		args = append(args, tagsJSON)
+		fmt.Printf("DEBUG: pq.Array(tags): %+v\n", pq.Array(tags))
+		query += fmt.Sprintf(" AND tags ?| $%d", argIdx)
+		args = append(args, pq.Array(tags)) // Use pq.Array instead of json.Marshal
 		argIdx++
 	}
 
@@ -253,6 +259,7 @@ func (r *repository) FindGroupsByTags(ctx context.Context, tags []string, filter
 	query += fmt.Sprintf(" LIMIT $%d", argIdx)
 	args = append(args, limit)
 
+	r.logger.Debug(ctx, "FindGroupsByTags", logger.Field{Key: "query", Value: query})
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query groups: %w", err)

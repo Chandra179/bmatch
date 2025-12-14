@@ -2,12 +2,9 @@ package cfg
 
 import (
 	"errors"
-	"log"
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type RedisConfig struct {
@@ -57,11 +54,6 @@ type GroupConfig struct {
 
 func Load() (*Config, error) {
 	var errs []error
-
-	err := godotenv.Load() // ignore if .env missing (local only)
-	if err != nil {
-		log.Print("skip error godot load env")
-	}
 
 	appEnv := mustEnv("APP_ENV", &errs)
 	host := mustEnv("REDIS_HOST", &errs)

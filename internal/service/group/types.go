@@ -57,10 +57,10 @@ type GroupMember struct {
 }
 
 type Application struct {
-	UserID    string    `json:"user_id"`
-	Pitch     string    `json:"pitch"`
-	Status    string    `json:"status"`
-	AppliedAt time.Time `json:"applied_at"`
+	UserID    string     `json:"user_id"`
+	Pitch     string     `json:"pitch"`
+	Status    string     `json:"status"`
+	AppliedAt time.Time  `json:"applied_at"`
 	DecidedAt *time.Time `json:"decided_at,omitempty"`
 }
 
@@ -84,8 +84,7 @@ type JoinGroupRequest struct {
 }
 
 type ApplyToGroupRequest struct {
-	GroupID string `json:"group_id" binding:"required,uuid"`
-	Pitch   string `json:"pitch" binding:"required,min=50,max=500"`
+	Pitch string `json:"pitch" binding:"required,min=50,max=500"`
 }
 
 type ApproveApplicationRequest struct {
@@ -103,10 +102,10 @@ type DiscoverGroupsRequest struct {
 
 type GroupResponse struct {
 	*Group
-	Members          []GroupMemberResponse `json:"members,omitempty"`
-	IsMember         bool                  `json:"is_member"`
-	IsOwner          bool                  `json:"is_owner"`
-	PendingApplication *Application        `json:"pending_application,omitempty"`
+	Members            []GroupMemberResponse `json:"members,omitempty"`
+	IsMember           bool                  `json:"is_member"`
+	IsOwner            bool                  `json:"is_owner"`
+	PendingApplication *Application          `json:"pending_application,omitempty"`
 }
 
 type GroupMemberResponse struct {

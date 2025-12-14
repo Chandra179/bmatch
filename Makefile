@@ -8,7 +8,7 @@ build:
 	docker compose up --build -d
 
 run:
-	go run cmd/myapp/main.go
+	docker compose up --build -d bmatch-app
 
 swag:
 	swag init -g /cmd/myapp/main.go -o api

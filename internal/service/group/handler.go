@@ -3,6 +3,7 @@ package group
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -180,13 +181,27 @@ func (h *Handler) DiscoverGroups(c *gin.Context) {
 		return
 	}
 
+	var tags []string
+	if len(filters.Tags) > 0 {
+		for _, tag := range filters.Tags {
+			// Split each tag string by comma and trim whitespace
+			splitTags := strings.Split(tag, ",")
+			for _, t := range splitTags {
+				trimmed := strings.TrimSpace(t)
+				if trimmed != "" {
+					tags = append(tags, trimmed)
+				}
+			}
+		}
+	}
+
 	// Get user ID (optional for discovery)
 	userID, exists := c.Get("user_id")
 
 	// For now, use query tags as user profile
 	// In production, fetch user profile from database
 	userProfile := UserProfile{
-		Tags: filters.Tags,
+		Tags: tags,
 	}
 
 	if exists {

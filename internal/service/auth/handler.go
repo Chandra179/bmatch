@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bmatch/pkg/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,11 +9,13 @@ import (
 
 type Handler struct {
 	service *Service
+	logger  logger.AppLogger
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, logger logger.AppLogger) *Handler {
 	return &Handler{
 		service: service,
+		logger:  logger,
 	}
 }
 
@@ -88,6 +91,7 @@ func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 		sessionData, err := h.service.ValidateAndRefreshSession(c.Request.Context(), sessionID)
 		if err != nil {
 			// Clear cookie and return 401
+			h.logger.Debug(c, "session", logger.Field{Key: "test", Value: err})
 			c.SetCookie(SessionCookieName, "", -1, "/", "", true, true)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "session expired, please re-login"})
 			c.Abort()
@@ -95,6 +99,7 @@ func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Store session data in context for downstream handlers
+		h.logger.Debug(c, "session_should_be_set", logger.Field{Key: "user_id", Value: err})
 		c.Set("user_id", sessionData.UserID)
 		c.Next()
 	}

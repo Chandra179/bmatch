@@ -126,7 +126,7 @@ func (s *Server) initServicesAndRoutes() {
 	userRepo := user.NewRepository(s.db)
 	s.userService = user.NewService(userRepo, s.logger)
 	// Initialize Group Service
-	groupRepo := group.NewRepository(s.db)
+	groupRepo := group.NewRepository(s.db, *s.logger)
 	groupMatcher := group.NewPostgresMatcher(groupRepo)
 	s.groupService = group.NewService(groupRepo, groupMatcher, s.cache, s.logger)
 
@@ -135,7 +135,7 @@ func (s *Server) initServicesAndRoutes() {
 	routes := NewRoutes(r)
 	routes.setupInfraRoutes()
 	// Business logic endpoints
-	authHandler := auth.NewHandler(s.authService)
+	authHandler := auth.NewHandler(s.authService, *s.logger)
 	routes.setupAuthRoutes(authHandler, s.oauth2Manager)
 	routes.setupGroupRoutes(authHandler, s.groupService)
 	routes.setupUserRoutes(authHandler, s.userService)

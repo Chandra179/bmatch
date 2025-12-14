@@ -17,9 +17,9 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-// GetUser handles GET /api/v1/users/:id
+// GetUser handles GET /api/v1/users/:user_id
 func (h *Handler) GetUser(c *gin.Context) {
-	userID := c.Param("id")
+	userID := c.Param("user_id")
 
 	user, err := h.service.GetUser(c.Request.Context(), userID)
 	if err != nil {

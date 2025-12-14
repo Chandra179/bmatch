@@ -43,7 +43,7 @@ func (h *Handler) CreateGroup(c *gin.Context) {
 
 // JoinGroup handles POST /api/v1/groups/:id/join
 func (h *Handler) JoinGroup(c *gin.Context) {
-	groupID := c.Param("id")
+	groupID := c.Param("group_id")
 
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -62,7 +62,7 @@ func (h *Handler) JoinGroup(c *gin.Context) {
 
 // ApplyToGroup handles POST /api/v1/groups/:id/apply
 func (h *Handler) ApplyToGroup(c *gin.Context) {
-	groupID := c.Param("id")
+	groupID := c.Param("group_id")
 
 	var req ApplyToGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func (h *Handler) ApplyToGroup(c *gin.Context) {
 
 // ApproveApplication handles POST /api/v1/groups/:id/applications/:user_id/approve
 func (h *Handler) ApproveApplication(c *gin.Context) {
-	groupID := c.Param("id")
+	groupID := c.Param("group_id")
 	applicantUserID := c.Param("user_id")
 
 	var req struct {
@@ -120,7 +120,7 @@ func (h *Handler) ApproveApplication(c *gin.Context) {
 
 // GetGroup handles GET /api/v1/groups/:id
 func (h *Handler) GetGroup(c *gin.Context) {
-	groupID := c.Param("id")
+	groupID := c.Param("group_id")
 
 	group, err := h.service.GetGroup(c.Request.Context(), groupID)
 	if err != nil {
@@ -182,13 +182,13 @@ func (h *Handler) DiscoverGroups(c *gin.Context) {
 
 	// Get user ID (optional for discovery)
 	userID, exists := c.Get("user_id")
-	
+
 	// For now, use query tags as user profile
 	// In production, fetch user profile from database
 	userProfile := UserProfile{
 		Tags: filters.Tags,
 	}
-	
+
 	if exists {
 		userProfile.UserID = userID.(string)
 	}

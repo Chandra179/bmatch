@@ -99,7 +99,7 @@ func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Store session data in context for downstream handlers
-		h.logger.Debug(c, "session_should_be_set", logger.Field{Key: "user_id", Value: err})
+		h.logger.Debug(c, "logging_session", logger.Field{Key: "user_id", Value: err})
 		c.Set("user_id", sessionData.UserID)
 		c.Next()
 	}

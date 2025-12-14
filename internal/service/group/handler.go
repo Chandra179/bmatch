@@ -43,7 +43,7 @@ func (h *Handler) CreateGroup(c *gin.Context) {
 
 // JoinGroup handles POST /api/v1/groups/:id/join
 func (h *Handler) JoinGroup(c *gin.Context) {
-	groupID := c.Param("group_id")
+	groupID := c.Param("id")
 
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -62,7 +62,7 @@ func (h *Handler) JoinGroup(c *gin.Context) {
 
 // ApplyToGroup handles POST /api/v1/groups/:id/apply
 func (h *Handler) ApplyToGroup(c *gin.Context) {
-	groupID := c.Param("group_id")
+	groupID := c.Param("id")
 
 	var req ApplyToGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func (h *Handler) ApplyToGroup(c *gin.Context) {
 
 // ApproveApplication handles POST /api/v1/groups/:id/applications/:user_id/approve
 func (h *Handler) ApproveApplication(c *gin.Context) {
-	groupID := c.Param("group_id")
+	groupID := c.Param("id")
 	applicantUserID := c.Param("user_id")
 
 	var req struct {
@@ -120,7 +120,7 @@ func (h *Handler) ApproveApplication(c *gin.Context) {
 
 // GetGroup handles GET /api/v1/groups/:id
 func (h *Handler) GetGroup(c *gin.Context) {
-	groupID := c.Param("group_id")
+	groupID := c.Param("id")
 
 	group, err := h.service.GetGroup(c.Request.Context(), groupID)
 	if err != nil {
